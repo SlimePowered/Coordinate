@@ -17,15 +17,21 @@ import java.net.URL
 
 @ExperimentalSerializationApi
 class MCPMappingProvider : MappingProvider("mcp", "MCP") {
-    private lateinit var versionManifest: MCPVersionManifest
+    private var versionManifest: MCPVersionManifest? = null
 
     private val versionManifestUrl = URL("http://export.mcpbot.bspk.rs/versions.json")
+
+    private var isPrepared = false
 
     private val mappingUrlTemplate =
         "http://export.mcpbot.bspk.rs/mcp_CHANNEL/MAPPINGVERSION-MCVERSION/mcp_CHANNEL-MAPPINGVERSION-MCVERSION.zip"
     private val srgUrlTemplate = "http://export.mcpbot.bspk.rs/mcp/MCVERSION/mcp-MCVERSION-srg.zip"
 
     override suspend fun fetchLatestMappings(version: String): Mappings {
+        if (!isPrepared) {
+            prepareForUsage()
+        }
+
         val mcpMappings = fetchLatestStableMappings(version)
         val srgMappings = fetchLatestSrgMappings(version)
 
@@ -66,11 +72,13 @@ class MCPMappingProvider : MappingProvider("mcp", "MCP") {
                 throw Exception("Failed to get MCP Versions!", t)
             }
         }
+
+        isPrepared = true
     }
 
     private suspend fun fetchLatestStableMappings(version: String) =
         withContext(Dispatchers.IO) {
-            val manifestVersion = versionManifest[version]
+            val manifestVersion = versionManifest!![version]
                 ?: error("There are no mappings available for $version")
             val latestStable = manifestVersion.stable.firstOrNull()?.toString()
                 ?: error("There are no stable mappings available for $version")

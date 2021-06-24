@@ -20,7 +20,7 @@ class ZipFileUtil(zipURL: URL) : Closeable {
     fun getEntry(name: String) = zipFile.getEntry(name)
 
     fun readEntryText(entryName: String) =
-        zipFile.getInputStream(getEntry(entryName)).readBytes().toString(Charset.defaultCharset())
+        zipFile.getInputStream(getEntry(entryName)).use { it.readBytes() }.toString(Charset.defaultCharset())
 
     override fun close() {
         temporaryDirectory.deleteRecursively()
